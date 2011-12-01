@@ -77,7 +77,7 @@
 {
     // if the menu state is expanding, everywhere can be touch
     // otherwise, only the add button are can be touch
-    if (YES == _expanding) 
+    if (_expanding)
     {
         return YES;
     }
@@ -113,9 +113,8 @@
     item.center = item.startPoint;
     
     // shrink other menu buttons
-    for (int i = 0; i < [_menusArray count]; i ++)
+    for (QuadCurveMenuItem *otherItem in _menusArray)
     {
-        QuadCurveMenuItem *otherItem = [_menusArray objectAtIndex:i];
         CAAnimationGroup *shrink = [self _shrinkAnimationAtPoint:otherItem.center];
         if (otherItem.tag == item.tag) {
             continue;
@@ -124,6 +123,7 @@
 
         otherItem.center = otherItem.startPoint;
     }
+
     _expanding = NO;
     
     // rotate "add" button
@@ -204,7 +204,7 @@
         _timer = nil;
         return;
     }
-    
+
     int tag = 1000 + _flag;
     QuadCurveMenuItem *item = (QuadCurveMenuItem *)[self viewWithTag:tag];
     
@@ -214,7 +214,7 @@
     rotateAnimation.keyTimes = [NSArray arrayWithObjects:
                                 [NSNumber numberWithFloat:.3], 
                                 [NSNumber numberWithFloat:.4], nil]; 
-    
+
     CAKeyframeAnimation *positionAnimation = [CAKeyframeAnimation animationWithKeyPath:@"position"];
     positionAnimation.duration = 0.5f;
     CGMutablePathRef path = CGPathCreateMutable();
@@ -224,7 +224,7 @@
     CGPathAddLineToPoint(path, NULL, item.endPoint.x, item.endPoint.y); 
     positionAnimation.path = path;
     CGPathRelease(path);
-    
+
     CAAnimationGroup *animationgroup = [CAAnimationGroup animation];
     animationgroup.animations = [NSArray arrayWithObjects:positionAnimation, rotateAnimation, nil];
     animationgroup.duration = 0.5f;
@@ -232,9 +232,8 @@
     animationgroup.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseIn];
     [item.layer addAnimation:animationgroup forKey:@"Expand"];
     item.center = item.endPoint;
-    
-    _flag ++;
-    
+
+    _flag++;
 }
 
 - (void)_close
@@ -248,15 +247,15 @@
     }
     
     int tag = 1000 + _flag;
-     QuadCurveMenuItem *item = (QuadCurveMenuItem *)[self viewWithTag:tag];
+    QuadCurveMenuItem *item = (QuadCurveMenuItem *)[self viewWithTag:tag];
     
     CAKeyframeAnimation *rotateAnimation = [CAKeyframeAnimation animationWithKeyPath:@"transform.rotation.z"];
     rotateAnimation.values = [NSArray arrayWithObjects:[NSNumber numberWithFloat:0.0f],[NSNumber numberWithFloat:M_PI * 2],[NSNumber numberWithFloat:0.0f], nil];
     rotateAnimation.duration = 0.5f;
     rotateAnimation.keyTimes = [NSArray arrayWithObjects:
-                                [NSNumber numberWithFloat:.0], 
-                                [NSNumber numberWithFloat:.4],
-                                [NSNumber numberWithFloat:.5], nil]; 
+                                [NSNumber numberWithFloat:0.0f],
+                                [NSNumber numberWithFloat:0.4f],
+                                [NSNumber numberWithFloat:0.5f], nil];
         
     CAKeyframeAnimation *positionAnimation = [CAKeyframeAnimation animationWithKeyPath:@"position"];
     positionAnimation.duration = 0.5f;
@@ -274,14 +273,14 @@
     animationgroup.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseIn];
     [item.layer addAnimation:animationgroup forKey:@"Close"];
     item.center = item.startPoint;
-    _flag --;
+    _flag--;
 }
 
 - (CAAnimationGroup *)_blowupAnimationAtPoint:(CGPoint)p
 {
     CAKeyframeAnimation *positionAnimation = [CAKeyframeAnimation animationWithKeyPath:@"position"];
     positionAnimation.values = [NSArray arrayWithObjects:[NSValue valueWithCGPoint:p], nil];
-    positionAnimation.keyTimes = [NSArray arrayWithObjects: [NSNumber numberWithFloat:.3], nil]; 
+    positionAnimation.keyTimes = [NSArray arrayWithObjects:[NSNumber numberWithFloat:0.3f], nil];
     
     CABasicAnimation *scaleAnimation = [CABasicAnimation animationWithKeyPath:@"transform"];
     scaleAnimation.toValue = [NSValue valueWithCATransform3D:CATransform3DMakeScale(3, 3, 1)];
@@ -289,33 +288,32 @@
     CABasicAnimation *opacityAnimation = [CABasicAnimation animationWithKeyPath:@"opacity"];
     opacityAnimation.toValue  = [NSNumber numberWithFloat:0.0f];
     
-    CAAnimationGroup *animationgroup = [CAAnimationGroup animation];
-    animationgroup.animations = [NSArray arrayWithObjects:positionAnimation, scaleAnimation, opacityAnimation, nil];
-    animationgroup.duration = 0.3f;
-    animationgroup.fillMode = kCAFillModeForwards;
+    CAAnimationGroup *animationGroup = [CAAnimationGroup animation];
+    animationGroup.animations = [NSArray arrayWithObjects:positionAnimation, scaleAnimation, opacityAnimation, nil];
+    animationGroup.duration = 0.3f;
+    animationGroup.fillMode = kCAFillModeForwards;
 
-    return animationgroup;
+    return animationGroup;
 }
 
 - (CAAnimationGroup *)_shrinkAnimationAtPoint:(CGPoint)p
 {
     CAKeyframeAnimation *positionAnimation = [CAKeyframeAnimation animationWithKeyPath:@"position"];
     positionAnimation.values = [NSArray arrayWithObjects:[NSValue valueWithCGPoint:p], nil];
-    positionAnimation.keyTimes = [NSArray arrayWithObjects: [NSNumber numberWithFloat:.3], nil]; 
+    positionAnimation.keyTimes = [NSArray arrayWithObjects:[NSNumber numberWithFloat:0.3f], nil];
     
     CABasicAnimation *scaleAnimation = [CABasicAnimation animationWithKeyPath:@"transform"];
-    scaleAnimation.toValue = [NSValue valueWithCATransform3D:CATransform3DMakeScale(.01, .01, 1)];
+    scaleAnimation.toValue = [NSValue valueWithCATransform3D:CATransform3DMakeScale(0.01f, 0.01f, 1.f)];
     
     CABasicAnimation *opacityAnimation = [CABasicAnimation animationWithKeyPath:@"opacity"];
-    opacityAnimation.toValue  = [NSNumber numberWithFloat:0.0f];
+    opacityAnimation.toValue  = [NSNumber numberWithFloat:0.f];
     
-    CAAnimationGroup *animationgroup = [CAAnimationGroup animation];
-    animationgroup.animations = [NSArray arrayWithObjects:positionAnimation, scaleAnimation, opacityAnimation, nil];
-    animationgroup.duration = 0.3f;
-    animationgroup.fillMode = kCAFillModeForwards;
+    CAAnimationGroup *animationGroup = [CAAnimationGroup animation];
+    animationGroup.animations = [NSArray arrayWithObjects:positionAnimation, scaleAnimation, opacityAnimation, nil];
+    animationGroup.duration = 0.3f;
+    animationGroup.fillMode = kCAFillModeForwards;
     
-    return animationgroup;
+    return animationGroup;
 }
-
 
 @end
