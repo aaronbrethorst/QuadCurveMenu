@@ -9,12 +9,21 @@
 #import "QuadCurveMenu.h"
 #import <QuartzCore/QuartzCore.h>
 
-#define NEARRADIUS 130.0f
-#define ENDRADIUS 140.0f
-#define FARRADIUS 160.0f
-#define STARTPOINT CGPointMake(50, 430)
-#define TIMEOFFSET 0.026f
+#define NEARRADIUS 110.0f
+#define ENDRADIUS 120.0f
+#define FARRADIUS 140.0f
+#define STARTPOINT CGPointMake(160, 240)
+#define TIMEOFFSET 0.036f
+#define ROTATEANGLE 0
+#define MENUWHOLEANGLE  M_PI * 2
 
+static CGPoint RotateCGPointAroundCenter(CGPoint point, CGPoint center, float angle)
+{
+    CGAffineTransform translation = CGAffineTransformMakeTranslation(center.x, center.y);
+    CGAffineTransform rotation = CGAffineTransformMakeRotation(angle);
+    CGAffineTransform transformGroup = CGAffineTransformConcat(CGAffineTransformConcat(CGAffineTransformInvert(translation), rotation), translation);
+    return CGPointApplyAffineTransform(point, transformGroup);    
+}
 
 @interface QuadCurveMenu ()
 - (void)_expand;
@@ -35,22 +44,8 @@
     if (self) {
         self.backgroundColor = [UIColor clearColor];
         
-        _menusArray = [aMenusArray copy];
-        
-        // add the menu buttons
-        int count = [_menusArray count];
-        for (int i = 0; i < count; i ++)
-        {
-            QuadCurveMenuItem *item = [_menusArray objectAtIndex:i];
-            item.tag = 1000 + i;
-            item.startPoint = STARTPOINT;
-            item.endPoint = CGPointMake(STARTPOINT.x + ENDRADIUS * sinf(i * M_PI_2 / (count - 1)), STARTPOINT.y - ENDRADIUS * cosf(i * M_PI_2 / (count - 1)));
-            item.nearPoint = CGPointMake(STARTPOINT.x + NEARRADIUS * sinf(i * M_PI_2 / (count - 1)), STARTPOINT.y - NEARRADIUS * cosf(i * M_PI_2 / (count - 1)));
-            item.farPoint = CGPointMake(STARTPOINT.x + FARRADIUS * sinf(i * M_PI_2 / (count - 1)), STARTPOINT.y - FARRADIUS * cosf(i * M_PI_2 / (count - 1)));
-            item.center = item.startPoint;
-            item.delegate = self;
-            [self addSubview:item];
-        }
+        // layout menus
+        self.menusArray = aMenusArray;
         
         // add the "Add" Button.
         _addButton = [[QuadCurveMenuItem alloc] initWithImage:[UIImage imageNamed:@"bg-addbutton.png"]
@@ -164,9 +159,12 @@
         QuadCurveMenuItem *item = [_menusArray objectAtIndex:i];
         item.tag = 1000 + i;
         item.startPoint = STARTPOINT;
-        item.endPoint = CGPointMake(STARTPOINT.x + ENDRADIUS * sinf(i * M_PI_2 / (count - 1)), STARTPOINT.y - ENDRADIUS * cosf(i * M_PI_2 / (count - 1)));
-        item.nearPoint = CGPointMake(STARTPOINT.x + NEARRADIUS * sinf(i * M_PI_2 / (count - 1)), STARTPOINT.y - NEARRADIUS * cosf(i * M_PI_2 / (count - 1)));
-        item.farPoint = CGPointMake(STARTPOINT.x + FARRADIUS * sinf(i * M_PI_2 / (count - 1)), STARTPOINT.y - FARRADIUS * cosf(i * M_PI_2 / (count - 1)));
+        CGPoint endPoint = CGPointMake(STARTPOINT.x + ENDRADIUS * sinf(i * MENUWHOLEANGLE / count), STARTPOINT.y - ENDRADIUS * cosf(i * MENUWHOLEANGLE / count));
+        item.endPoint = RotateCGPointAroundCenter(endPoint, STARTPOINT, ROTATEANGLE);
+        CGPoint nearPoint = CGPointMake(STARTPOINT.x + NEARRADIUS * sinf(i * MENUWHOLEANGLE / count), STARTPOINT.y - NEARRADIUS * cosf(i * MENUWHOLEANGLE / count));
+        item.nearPoint = RotateCGPointAroundCenter(nearPoint, STARTPOINT, ROTATEANGLE);
+        CGPoint farPoint = CGPointMake(STARTPOINT.x + FARRADIUS * sinf(i * MENUWHOLEANGLE / count), STARTPOINT.y - FARRADIUS * cosf(i * MENUWHOLEANGLE / count));
+        item.farPoint = RotateCGPointAroundCenter(farPoint, STARTPOINT, ROTATEANGLE);  
         item.center = item.startPoint;
         item.delegate = self;
         [self addSubview:item];
@@ -189,7 +187,7 @@
     // expand or close animation
     if (!_timer) 
     {
-        _flag = self.isExpanding ? 0 : 5;
+        _flag = self.isExpanding ? 0 : ([_menusArray count] - 1);
         SEL selector = self.isExpanding ? @selector(_expand) : @selector(_close);
         _timer = [[NSTimer scheduledTimerWithTimeInterval:TIMEOFFSET target:self selector:selector userInfo:nil repeats:YES] retain];
     }
@@ -197,7 +195,7 @@
 #pragma mark - private methods
 - (void)_expand
 {
-    if (_flag == 6)
+    if (_flag == [_menusArray count])
     {
         [_timer invalidate];
         [_timer release];
